@@ -100,7 +100,7 @@ export function ProcessSection() {
   return (
     <section
       ref={sectionRef}
-      className="w-full"
+      className="w-full process-section"
       style={{
         background: '#F5F2ED',
         height: '100svh',
@@ -306,7 +306,7 @@ export function ProcessSection() {
       {/* ── MOBILE: Vertical stepped list ── (shown instead of desktop on small screens) */}
       <div
         className="flex md:hidden flex-col"
-        style={{ padding: '4rem 2rem', gap: 0 }}
+        style={{ padding: '0 1.5rem', gap: 0 }}
       >
         <span
           style={{

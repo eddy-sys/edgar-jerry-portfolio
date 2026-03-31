@@ -59,6 +59,14 @@ body {
   #root > div {
     padding-bottom: 68px;
   }
+
+  /* Process section: unconstrain height on mobile so content isn't clipped */
+  .process-section {
+    height: auto !important;
+    overflow: visible !important;
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+  }
 }
 
 ::-webkit-scrollbar { width: 2px; }
