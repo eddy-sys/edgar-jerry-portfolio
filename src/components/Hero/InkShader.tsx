@@ -1,6 +1,16 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
+
+// Raw mouse target (snaps to cursor instantly)
+const rawMouse = { x: 0.5, y: 0.5 }
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('mousemove', (e) => {
+    rawMouse.x = e.clientX / window.innerWidth
+    rawMouse.y = 1.0 - e.clientY / window.innerHeight // flip Y for GLSL
+  }, { passive: true })
+}
 
 const vertexShader = `
   varying vec2 vUv;
@@ -12,6 +22,7 @@ const vertexShader = `
 
 const fragmentShader = `
   uniform float uTime;
+  uniform vec2  uMouse;   // normalised 0-1, Y flipped
   varying vec2 vUv;
 
   // --- Noise helpers ---
@@ -39,7 +50,7 @@ const fragmentShader = `
     float a = 0.5;
     vec2  shift = vec2(100.0);
     mat2  rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 4; i++) {
       v += a * noise(p);
       p = rot * p * 2.0 + shift;
       a *= 0.5;
@@ -49,35 +60,35 @@ const fragmentShader = `
 
   void main() {
     vec2 uv = vUv;
-    // Slow time drift
-    float t = uTime * 0.018;
+    // [3] Faster drift
+    float t = uTime * 0.06;
 
-    // --- Domain warp (3 levels) ---
+    // Mouse parallax offset — stronger push on domain warp
+    vec2 mouseShift = (uMouse - 0.5) * 1.2;
+
+    // --- Domain warp (2 levels) ---
     vec2 q = vec2(
       fbm(uv + vec2(0.0, 0.0)),
       fbm(uv + vec2(5.2, 1.3))
     );
 
+    // [1] Mouse shifts the warp — ink reacts to where the cursor is
     vec2 r = vec2(
-      fbm(uv + 3.5 * q + vec2(1.7, 9.2) + t * 0.6),
-      fbm(uv + 3.5 * q + vec2(8.3, 2.8) + t * 0.8)
+      fbm(uv + 3.5 * q + vec2(1.7, 9.2) + t * 0.6 + mouseShift),
+      fbm(uv + 3.5 * q + vec2(8.3, 2.8) + t * 0.8 + mouseShift * 0.7)
     );
 
-    vec2 s = vec2(
-      fbm(uv + 2.8 * r + vec2(3.1, 4.7) + t),
-      fbm(uv + 2.8 * r + vec2(6.4, 1.2) + t * 1.2)
-    );
-
-    float f = fbm(uv + 3.0 * s);
+    float f = fbm(uv + 3.0 * r + t * 0.4);
 
     // --- Palette: warm cream → visible ink ---
     vec3 cream    = vec3(0.961, 0.949, 0.929);
-    vec3 wash     = vec3(0.780, 0.765, 0.745); // noticeable warm grey
-    vec3 midInk   = vec3(0.420, 0.400, 0.378); // clear mid tone
-    vec3 darkInk  = vec3(0.110, 0.098, 0.078); // deep ink
+    vec3 wash     = vec3(0.780, 0.765, 0.745);
+    vec3 midInk   = vec3(0.420, 0.400, 0.378);
+    vec3 darkInk  = vec3(0.110, 0.098, 0.078);
 
-    // Remap f so there's real contrast across most of the canvas
-    float ink = smoothstep(0.30, 0.72, f);
+    // [2] Breathing contrast — ink boundary expands / contracts
+    float breath  = sin(uTime * 0.3) * 0.09;
+    float ink = smoothstep(0.30 - breath, 0.72 + breath, f);
 
     vec3 col = cream;
     col = mix(col, wash,   smoothstep(0.0,  0.4,  ink));
@@ -93,14 +104,21 @@ const fragmentShader = `
   }
 `
 
-function InkPlane() {
+function InkPlane({ active }: { active: boolean }) {
   const meshRef = useRef<THREE.Mesh>(null)
   const { viewport } = useThree()
+  // Lerped mouse — starts centred, drifts toward cursor at 4% per frame
+  const lerpedMouse = useRef(new THREE.Vector2(0.5, 0.5))
 
   useFrame(({ clock }) => {
-    if (!meshRef.current) return
+    if (!meshRef.current || !active) return
     const mat = meshRef.current.material as THREE.ShaderMaterial
     mat.uniforms.uTime.value = clock.getElapsedTime()
+
+    // Smooth mouse lag — feels like ink reacting, not instant tracking
+    lerpedMouse.current.x += (rawMouse.x - lerpedMouse.current.x) * 0.08
+    lerpedMouse.current.y += (rawMouse.y - lerpedMouse.current.y) * 0.08
+    mat.uniforms.uMouse.value.copy(lerpedMouse.current)
   })
 
   return (
@@ -109,22 +127,41 @@ function InkPlane() {
       <shaderMaterial
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
-        uniforms={{ uTime: { value: 0 } }}
+        uniforms={{
+          uTime:  { value: 0 },
+          uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+        }}
       />
     </mesh>
   )
 }
 
 export function InkShaderCanvas() {
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState(true)
+
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setActive(entry.isIntersecting),
+      { threshold: 0 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <div className="absolute inset-0" style={{ zIndex: 0 }}>
+    <div ref={wrapRef} className="absolute inset-0" style={{ zIndex: 0 }}>
       <Canvas
         camera={{ position: [0, 0, 1], near: 0.1, far: 10 }}
-        gl={{ antialias: false, alpha: false }}
+        gl={{ antialias: false, alpha: false, powerPreference: 'low-power' }}
+        dpr={1}
         style={{ background: '#F5F2ED' }}
         resize={{ scroll: false }}
+        frameloop={active ? 'always' : 'never'}
       >
-        <InkPlane />
+        <InkPlane active={active} />
       </Canvas>
     </div>
   )

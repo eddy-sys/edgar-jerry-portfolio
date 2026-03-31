@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { gsap } from 'gsap'
 
 type CursorState = 'default' | 'hover' | 'viewfinder'
 
@@ -8,103 +7,111 @@ export function CustomCursor() {
   const ringRef = useRef<HTMLDivElement>(null)
   const [state, setCursorState] = useState<CursorState>('default')
 
+  // Exact mouse position — dot follows this directly
+  const mouse = useRef({ x: -100, y: -100 })
+  // Lagged ring position — lerps toward mouse
+  const ring = useRef({ x: -100, y: -100 })
+
+  const stateRef = useRef<CursorState>('default')
+  const raf = useRef<number>(0)
+
   useEffect(() => {
     const dot = dotRef.current
-    const ring = ringRef.current
-    if (!dot || !ring) return
+    const ringEl = ringRef.current
+    if (!dot || !ringEl) return
 
     const onMove = (e: MouseEvent) => {
-      gsap.to(dot, { x: e.clientX, y: e.clientY, duration: 0.05, ease: 'none' })
-      gsap.to(ring, { x: e.clientX, y: e.clientY, duration: 0.18, ease: 'power2.out' })
+      mouse.current = { x: e.clientX, y: e.clientY }
 
       const target = e.target as HTMLElement
-      if (target.closest('[data-cursor="viewfinder"]')) {
-        setCursorState('viewfinder')
-      } else if (target.closest('a, button, [data-cursor="hover"]')) {
-        setCursorState('hover')
-      } else {
-        setCursorState('default')
+      let next: CursorState = 'default'
+      if (target.closest('[data-cursor="viewfinder"]')) next = 'viewfinder'
+      else if (target.closest('a, button, [data-cursor="hover"]')) next = 'hover'
+
+      if (next !== stateRef.current) {
+        stateRef.current = next
+        setCursorState(next)
       }
     }
 
-    window.addEventListener('mousemove', onMove)
-    return () => window.removeEventListener('mousemove', onMove)
+    const tick = () => {
+      // Dot snaps instantly
+      dot.style.transform = `translate3d(${mouse.current.x}px, ${mouse.current.y}px, 0)`
+
+      // Ring lerps — 0.12 = lag factor (lower = more lag)
+      ring.current.x += (mouse.current.x - ring.current.x) * 0.12
+      ring.current.y += (mouse.current.y - ring.current.y) * 0.12
+      ringEl.style.transform = `translate3d(${ring.current.x}px, ${ring.current.y}px, 0)`
+
+      raf.current = requestAnimationFrame(tick)
+    }
+
+    window.addEventListener('mousemove', onMove, { passive: true })
+    raf.current = requestAnimationFrame(tick)
+
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      cancelAnimationFrame(raf.current)
+    }
   }, [])
 
-  const isViewfinder = state === 'viewfinder'
   const isHover = state === 'hover'
+  const isViewfinder = state === 'viewfinder'
 
   return (
     <>
-      {/* Dot */}
+      {/* Dot — snaps to cursor */}
       <div
         ref={dotRef}
-        className="fixed z-[9999] pointer-events-none"
+        className="fixed pointer-events-none"
         style={{
-          width: isViewfinder ? 0 : 4,
-          height: isViewfinder ? 0 : 4,
-          background: '#0A0908',
-          borderRadius: '50%',
-          transform: 'translate(-50%, -50%)',
           top: 0,
           left: 0,
-          transition: 'width 0.15s, height 0.15s',
+          width: 0,
+          height: 0,
+          zIndex: 9999,
+          willChange: 'transform',
         }}
-      />
+      >
+        <div
+          style={{
+            position: 'absolute',
+            width: isHover ? 6 : 4,
+            height: isHover ? 6 : 4,
+            borderRadius: '50%',
+            background: '#0A0908',
+            opacity: isHover ? 1 : 0.7,
+            transform: 'translate(-50%, -50%)',
+            transition: 'width 0.2s ease, height 0.2s ease, opacity 0.2s ease',
+          }}
+        />
+      </div>
 
-      {/* Ring */}
+      {/* Ring — lags behind cursor */}
       <div
         ref={ringRef}
-        className="fixed z-[9998] pointer-events-none"
-        style={{ top: 0, left: 0, transform: 'translate(-50%, -50%)' }}
+        className="fixed pointer-events-none"
+        style={{
+          top: 0,
+          left: 0,
+          width: 0,
+          height: 0,
+          zIndex: 9998,
+          willChange: 'transform',
+        }}
       >
-        {isViewfinder ? (
-          <div style={{ position: 'relative', width: 40, height: 40 }}>
-            {(['tl', 'tr', 'bl', 'br'] as const).map((corner) => (
-              <div
-                key={corner}
-                style={{
-                  position: 'absolute',
-                  width: 10,
-                  height: 10,
-                  borderColor: '#007AFF',
-                  borderStyle: 'solid',
-                  borderWidth: 0,
-                  top: corner.startsWith('t') ? 0 : undefined,
-                  bottom: corner.startsWith('b') ? 0 : undefined,
-                  left: corner.endsWith('l') ? 0 : undefined,
-                  right: corner.endsWith('r') ? 0 : undefined,
-                  borderTopWidth: corner.startsWith('t') ? 1.5 : 0,
-                  borderBottomWidth: corner.startsWith('b') ? 1.5 : 0,
-                  borderLeftWidth: corner.endsWith('l') ? 1.5 : 0,
-                  borderRightWidth: corner.endsWith('r') ? 1.5 : 0,
-                }}
-              />
-            ))}
-            <div
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%,-50%)',
-                width: 6,
-                height: 6,
-                border: '1px solid rgba(0,122,255,0.5)',
-                borderRadius: '50%',
-              }}
-            />
-          </div>
-        ) : (
-          <div
-            style={{
-              width: isHover ? 32 : 20,
-              height: isHover ? 32 : 20,
-              border: `1px solid ${isHover ? '#007AFF' : 'rgba(10,9,8,0.35)'}`,
-              borderRadius: '50%',
-              transition: 'width 0.2s, height 0.2s, border-color 0.2s',
-            }}
-          />
-        )}
+        <div
+          style={{
+            position: 'absolute',
+            transform: 'translate(-50%, -50%)',
+            width: isViewfinder ? 40 : isHover ? 14 : 22,
+            height: isViewfinder ? 40 : isHover ? 14 : 22,
+            borderRadius: isViewfinder ? 0 : '50%',
+            border: `1px solid rgba(10,9,8,${isHover ? 0.7 : 0.4})`,
+            background: isHover ? 'rgba(10,9,8,0.06)' : 'transparent',
+            transition: 'width 0.35s ease, height 0.35s ease, border-radius 0.35s ease, border-color 0.35s ease, background 0.35s ease',
+          }}
+        />
       </div>
     </>
   )

@@ -1,26 +1,64 @@
-import { motion } from 'framer-motion'
+import { useEffect, useRef } from 'react'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { siteConfig } from '../constants/data'
 
-const pageVariants = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-  exit: { opacity: 0, transition: { duration: 0.3 } },
-}
+gsap.registerPlugin(ScrollTrigger)
+
 
 const skills = [
-  'Product Strategy', 'UX Research', 'Interaction Design',
-  'Design Systems', 'Prototyping', 'User Testing',
-  'Visual Design', 'Motion Design', 'DesignOps',
-  'Figma', 'Framer', 'React',
+  'UX Research', 'UI Design', 'Interaction Design',
+  'Design Systems', 'Prototyping', 'Usability Testing',
+  'Wireframing', 'Visual Design', 'Figma',
+  'User Interviews', 'Competitive Audits', 'Stakeholder Workshops',
 ]
 
 export function About() {
+  const skillsRef = useRef<HTMLDivElement>(null)
+  const bioRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // Bio paragraphs reveal
+      gsap.utils.toArray<HTMLElement>('[data-bio-reveal]').forEach((el) => {
+        gsap.fromTo(
+          el,
+          { clipPath: 'inset(100% 0 0 0)', opacity: 0 },
+          {
+            clipPath: 'inset(0% 0 0 0)',
+            opacity: 1,
+            duration: 0.8,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: el, start: 'top 88%' },
+          }
+        )
+      })
+
+      // Skills wave — stagger left to right
+      gsap.utils.toArray<HTMLElement>('[data-skill-tag]').forEach((tag, i) => {
+        gsap.fromTo(
+          tag,
+          { opacity: 0, y: 12 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.4,
+            ease: 'power2.out',
+            delay: i * 0.055,
+            scrollTrigger: {
+              trigger: skillsRef.current,
+              start: 'top 88%',
+            },
+          }
+        )
+      })
+    })
+
+    return () => ctx.revert()
+  }, [])
+
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
+    <div
       className="min-h-screen"
       style={{
         background: '#F5F2ED',
@@ -36,7 +74,7 @@ export function About() {
             fontFamily: 'JetBrains Mono',
             fontSize: '10px',
             letterSpacing: '0.3em',
-            color: '#007AFF',
+            color: 'rgba(10,9,8,0.4)',
             textTransform: 'uppercase',
             display: 'block',
             marginBottom: 20,
@@ -47,35 +85,42 @@ export function About() {
 
         <h1
           style={{
-            fontFamily: 'Inter',
-            fontWeight: 800,
+            fontFamily: 'Cormorant Garamond',
+            fontStyle: 'italic',
+            fontWeight: 300,
             fontSize: 'clamp(36px, 6vw, 72px)',
-            letterSpacing: '-0.04em',
+            letterSpacing: '-0.02em',
             color: '#0A0908',
             lineHeight: 1.05,
             marginBottom: 56,
           }}
         >
-          Designing at the intersection of clarity and craft.
+          Let's build something intuitive.
         </h1>
 
         <div
+          ref={bioRef}
           className="grid gap-10 mb-20"
           style={{ gridTemplateColumns: '1fr 1fr' }}
         >
-          <p style={{ fontFamily: 'Inter', fontSize: '16px', color: 'rgba(10,9,8,0.6)', lineHeight: 1.8 }}>
-            I'm {siteConfig.name}, a product designer based in {siteConfig.location}.
-            I focus on building digital products that are precise, purposeful, and
-            built to last — from early-stage startups to scale-up design teams.
+          <p
+            data-bio-reveal
+            style={{ fontFamily: 'Inter', fontSize: '16px', color: 'rgba(10,9,8,0.6)', lineHeight: 1.8 }}
+          >
+            I'm {siteConfig.name}, a Product Designer based in {siteConfig.location}.
+            I believe great design happens at the intersection of empathy and strategy —
+            approaching every challenge as an opportunity to simplify complexity.
           </p>
-          <p style={{ fontFamily: 'Inter', fontSize: '16px', color: 'rgba(10,9,8,0.6)', lineHeight: 1.8 }}>
-            My work spans product strategy, design systems, and end-to-end
-            interface design. I'm particularly interested in the space where
-            engineering constraints become design opportunities.
+          <p
+            data-bio-reveal
+            style={{ fontFamily: 'Inter', fontSize: '16px', color: 'rgba(10,9,8,0.6)', lineHeight: 1.8 }}
+          >
+            My process is rooted in active listening, collaboration, and iterative testing,
+            ensuring the final product genuinely serves the user. I thrive in the space
+            between data and design, advocating for the user while supporting business goals.
           </p>
         </div>
 
-        {/* Divider */}
         <div style={{ width: '100%', height: 1, background: 'rgba(10,9,8,0.08)', marginBottom: 32 }} />
 
         <span
@@ -91,10 +136,12 @@ export function About() {
         >
           Expertise
         </span>
-        <div className="flex flex-wrap gap-2">
+
+        <div ref={skillsRef} className="flex flex-wrap gap-2">
           {skills.map((skill) => (
             <span
               key={skill}
+              data-skill-tag
               data-cursor="hover"
               style={{
                 fontFamily: 'JetBrains Mono',
@@ -104,7 +151,7 @@ export function About() {
                 border: '1px solid rgba(10,9,8,0.1)',
                 padding: '7px 14px',
                 cursor: 'none',
-                transition: 'border-color 0.2s',
+                opacity: 0,
               }}
             >
               {skill}
@@ -112,6 +159,6 @@ export function About() {
           ))}
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }

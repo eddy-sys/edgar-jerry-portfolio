@@ -8,41 +8,83 @@ gsap.registerPlugin(ScrollTrigger)
 
 export function HeroSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const nameRef = useRef<HTMLHeadingElement>(null)
+  const firstNameRef = useRef<HTMLSpanElement>(null)
+  const lastNameRef = useRef<HTMLSpanElement>(null)
   const subtitleRef = useRef<HTMLDivElement>(null)
   const scrollHintRef = useRef<HTMLDivElement>(null)
   const canvasWrapRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Entrance
       const tl = gsap.timeline({ delay: 0.2 })
-      tl.from(nameRef.current, {
+
+      // "Edgar" slides in from the left, "Jerry" from the right
+      tl.from(firstNameRef.current, {
         opacity: 0,
-        y: 40,
-        duration: 1.4,
+        x: -80,
+        duration: 1.2,
         ease: 'power3.out',
       })
+        .from(lastNameRef.current, {
+          opacity: 0,
+          x: 80,
+          duration: 1.2,
+          ease: 'power3.out',
+        }, '<') // start at same time
         .from(subtitleRef.current, {
           opacity: 0,
           y: 16,
           duration: 0.9,
           ease: 'power3.out',
-        }, '-=0.7')
+        }, '-=0.6')
         .from(scrollHintRef.current, {
           opacity: 0,
           duration: 0.6,
         }, '-=0.3')
 
-      // Canvas fades on scroll
-      gsap.to(canvasWrapRef.current, {
-        opacity: 0,
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: 'top top',
-          end: '60% top',
-          scrub: 2,
-        },
+      // Register scroll-driven tweens only after entrance completes
+      // — prevents fromTo from overwriting entrance animation's initial state
+      tl.call(() => {
+        // Canvas fades on scroll
+        gsap.to(canvasWrapRef.current, {
+          opacity: 0,
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: 'top top',
+            end: '60% top',
+            scrub: 2,
+          },
+        })
+
+        // "Edgar" drifts left, "Jerry" drifts right
+        gsap.fromTo(firstNameRef.current,
+          { x: 0, opacity: 1 },
+          {
+            x: -60,
+            opacity: 0,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: sectionRef.current,
+              start: 'top top',
+              end: '55% top',
+              scrub: 2.5,
+            },
+          }
+        )
+        gsap.fromTo(lastNameRef.current,
+          { x: 0, opacity: 1 },
+          {
+            x: 60,
+            opacity: 0,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: sectionRef.current,
+              start: 'top top',
+              end: '55% top',
+              scrub: 2.5,
+            },
+          }
+        )
       })
     }, sectionRef)
 
@@ -66,7 +108,6 @@ export function HeroSection() {
         style={{ zIndex: 2 }}
       >
         <h1
-          ref={nameRef}
           style={{
             fontFamily: 'Inter',
             fontWeight: 900,
@@ -75,47 +116,57 @@ export function HeroSection() {
             lineHeight: 0.9,
             color: '#0A0908',
             textTransform: 'uppercase',
+            overflow: 'hidden',
           }}
         >
-          {siteConfig.name}
+          <span ref={firstNameRef} style={{ display: 'inline-block' }}>Edgar</span>
+          {' '}
+          <span ref={lastNameRef} style={{ display: 'inline-block' }}>Jerry</span>
         </h1>
 
-        <div ref={subtitleRef} className="flex items-center gap-4">
-          <div
+        <div ref={subtitleRef} className="flex flex-col items-center gap-3">
+          {/* Tagline */}
+          <p
             style={{
-              width: 24,
-              height: 1,
-              background: '#007AFF',
-            }}
-          />
-          <span
-            style={{
-              fontFamily: 'JetBrains Mono',
-              fontSize: '11px',
-              letterSpacing: '0.25em',
+              fontFamily: 'Cormorant Garamond',
+              fontWeight: 300,
+              fontStyle: 'italic',
+              fontSize: 'clamp(22px, 2.8vw, 38px)',
+              letterSpacing: '0.02em',
               color: 'rgba(10,9,8,0.5)',
-              textTransform: 'uppercase',
             }}
           >
-            {siteConfig.role}
-          </span>
-          <span
-            style={{
-              fontFamily: 'JetBrains Mono',
-              fontSize: '11px',
-              letterSpacing: '0.1em',
-              color: '#007AFF',
-            }}
-          >
-            {siteConfig.location}
-          </span>
-          <div
-            style={{
-              width: 24,
-              height: 1,
-              background: '#007AFF',
-            }}
-          />
+            {siteConfig.tagline}
+          </p>
+
+          {/* Role + location */}
+          <div className="flex items-center gap-3">
+            <div style={{ width: 20, height: 1, background: 'rgba(10,9,8,0.2)' }} />
+            <span
+              style={{
+                fontFamily: 'Inter',
+                fontWeight: 300,
+                fontSize: '14px',
+                letterSpacing: '0.01em',
+                color: 'rgba(10,9,8,0.4)',
+              }}
+            >
+              {siteConfig.role}
+            </span>
+            <span style={{ color: 'rgba(10,9,8,0.2)', fontSize: '12px' }}>·</span>
+            <span
+              style={{
+                fontFamily: 'Inter',
+                fontWeight: 300,
+                fontSize: '14px',
+                letterSpacing: '0.01em',
+                color: 'rgba(10,9,8,0.3)',
+              }}
+            >
+              {siteConfig.location}
+            </span>
+            <div style={{ width: 20, height: 1, background: 'rgba(10,9,8,0.2)' }} />
+          </div>
         </div>
       </div>
 
@@ -130,7 +181,7 @@ export function HeroSection() {
             fontFamily: 'JetBrains Mono',
             fontSize: '9px',
             letterSpacing: '0.3em',
-            color: 'rgba(10,9,8,0.25)',
+            color: 'rgba(10,9,8,0.55)',
             textTransform: 'uppercase',
           }}
         >
@@ -139,8 +190,8 @@ export function HeroSection() {
         <div
           style={{
             width: 1,
-            height: 40,
-            background: 'linear-gradient(to bottom, rgba(10,9,8,0.25), transparent)',
+            height: 56,
+            background: 'linear-gradient(to bottom, rgba(10,9,8,0.5), transparent)',
           }}
         />
       </div>

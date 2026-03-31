@@ -1,165 +1,161 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Project } from '../../constants/data'
 
 interface Props {
   project: Project
+  index: number
 }
 
-export function ProjectCard({ project }: Props) {
+export function ProjectCard({ project, index }: Props) {
   const [hovered, setHovered] = useState(false)
   const navigate = useNavigate()
+  const ghostRef = useRef<HTMLSpanElement>(null)
+  const cardRef = useRef<HTMLElement>(null)
+
+  const cardNumber = String(index + 1).padStart(2, '0')
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    const card = cardRef.current
+    const ghost = ghostRef.current
+    if (!card || !ghost) return
+    const rect = card.getBoundingClientRect()
+    // Normalise mouse position to -1..1 within the card
+    const nx = ((e.clientX - rect.left) / rect.width - 0.5) * 2
+    const ny = ((e.clientY - rect.top) / rect.height - 0.5) * 2
+    // Ghost moves opposite to mouse — depth illusion
+    ghost.style.transform = `translate(${-nx * 14}px, ${-ny * 10}px)`
+  }
+
+  const onMouseLeave = () => {
+    setHovered(false)
+    if (ghostRef.current) ghostRef.current.style.transform = 'translate(0px, 0px)'
+  }
 
   return (
     <article
+      ref={cardRef}
       data-cursor="viewfinder"
       className="relative overflow-hidden"
       style={{
-        gridColumn: `span ${project.gridCols}`,
         cursor: 'none',
-        border: hovered
-          ? '1px solid #007AFF'
-          : '1px solid rgba(10,9,8,0.1)',
         background: '#FFFFFF',
-        transition: 'border-color 0.25s ease, transform 0.3s ease, box-shadow 0.3s ease',
-        transform: hovered ? 'scale(1.012)' : 'scale(1)',
-        boxShadow: hovered
-          ? '0 8px 32px rgba(10,9,8,0.08)'
-          : '0 1px 4px rgba(10,9,8,0.04)',
+        transform: hovered ? 'scale3d(1.008, 1.008, 1)' : 'scale3d(1, 1, 1)',
+        transition: 'transform 0.4s ease',
+        willChange: 'transform',
       }}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={onMouseLeave}
+      onMouseMove={onMouseMove}
       onClick={() => navigate(`/work/${project.id}`)}
     >
-      {/* Image area */}
+      {/* Image area — color wash */}
       <div
-        className="relative w-full"
+        className="relative w-full overflow-hidden"
         style={{ aspectRatio: project.gridCols === 7 ? '16/9' : '4/3' }}
       >
-        {/* Warm tinted placeholder */}
+        {/* Color wash background */}
         <div
           className="absolute inset-0"
           style={{
-            background: `linear-gradient(145deg, #E8E4DE 0%, #DEDAD3 100%)`,
+            background: `linear-gradient(145deg, ${project.imageColor}55 0%, ${project.imageColor}22 100%)`,
+            backgroundColor: `${project.imageColor}33`,
           }}
         />
-        {/* Geometric element */}
+
+        {/* Subtle texture overlay */}
         <div
-          className="absolute inset-0 flex items-center justify-center"
-          style={{ opacity: 0.12 }}
-        >
-          <div
-            style={{
-              width: '35%',
-              aspectRatio: '1',
-              border: '1px solid rgba(10,9,8,0.6)',
-              transform: 'rotate(45deg)',
-            }}
-          />
-        </div>
-        {/* Category */}
-        <div
-          className="absolute top-4 left-4"
+          className="absolute inset-0"
           style={{
-            fontFamily: 'JetBrains Mono',
-            fontSize: '9px',
-            letterSpacing: '0.2em',
-            color: '#007AFF',
-            background: 'rgba(0,122,255,0.07)',
-            padding: '4px 8px',
-            border: '1px solid rgba(0,122,255,0.15)',
+            background: 'linear-gradient(to bottom, transparent 60%, rgba(10,9,8,0.04) 100%)',
+          }}
+        />
+
+        {/* Large ghost number — parallax layer */}
+        <span
+          ref={ghostRef}
+          className="absolute"
+          style={{
+            bottom: '1rem',
+            right: '1.5rem',
+            fontFamily: 'Inter',
+            fontWeight: 900,
+            fontSize: 'clamp(56px, 8vw, 96px)',
+            letterSpacing: '-0.05em',
+            color: '#0A0908',
+            opacity: 0.1,
+            lineHeight: 1,
+            userSelect: 'none',
+            pointerEvents: 'none',
+            transition: 'transform 0.15s ease-out',
+            willChange: 'transform',
           }}
         >
-          {project.category.toUpperCase()}
-        </div>
+          {cardNumber}
+        </span>
+
+        {/* Hover reveal: thin line from bottom */}
+        <div
+          className="absolute bottom-0 left-0 right-0"
+          style={{
+            height: 2,
+            background: project.imageColor,
+            opacity: hovered ? 0.7 : 0,
+            transition: 'opacity 0.35s ease',
+          }}
+        />
       </div>
 
-      {/* Info */}
-      <div className="p-5" style={{ borderTop: '1px solid rgba(10,9,8,0.06)' }}>
-        <div className="flex items-start justify-between gap-4 mb-2">
+      {/* Text area */}
+      <div
+        className="flex items-start justify-between gap-4"
+        style={{
+          padding: '1.25rem 1.5rem',
+          borderTop: '1px solid rgba(10,9,8,0.06)',
+        }}
+      >
+        <div className="flex flex-col gap-1">
+          {/* Category label */}
+          <span
+            style={{
+              fontFamily: 'JetBrains Mono',
+              fontSize: '9px',
+              letterSpacing: '0.25em',
+              color: 'rgba(10,9,8,0.35)',
+              textTransform: 'uppercase',
+            }}
+          >
+            {project.category}
+          </span>
+
+          {/* Title */}
           <h3
             style={{
               fontFamily: 'Inter',
               fontWeight: 700,
-              fontSize: '17px',
+              fontSize: '16px',
               letterSpacing: '-0.03em',
               color: '#0A0908',
+              lineHeight: 1.25,
             }}
           >
             {project.title}
           </h3>
-          <span
-            style={{
-              fontFamily: 'JetBrains Mono',
-              fontSize: '10px',
-              color: 'rgba(10,9,8,0.3)',
-              flexShrink: 0,
-              paddingTop: 3,
-            }}
-          >
-            {project.year}
-          </span>
         </div>
-        <p
+
+        {/* Year */}
+        <span
           style={{
-            fontFamily: 'Inter',
-            fontSize: '13px',
-            color: 'rgba(10,9,8,0.5)',
-            lineHeight: 1.65,
-            marginBottom: 16,
+            fontFamily: 'JetBrains Mono',
+            fontSize: '10px',
+            color: 'rgba(10,9,8,0.25)',
+            flexShrink: 0,
+            paddingTop: 2,
           }}
         >
-          {project.description}
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {project.techStack.map((tech) => (
-            <span
-              key={tech}
-              style={{
-                fontFamily: 'JetBrains Mono',
-                fontSize: '9px',
-                letterSpacing: '0.08em',
-                color: 'rgba(10,9,8,0.4)',
-                background: 'rgba(10,9,8,0.04)',
-                border: '1px solid rgba(10,9,8,0.08)',
-                padding: '3px 7px',
-              }}
-            >
-              {tech}
-            </span>
-          ))}
-        </div>
+          {project.year}
+        </span>
       </div>
-
-      {/* Technical inspect overlay */}
-      {hovered && (
-        <>
-          {[
-            { corner: 'tl', label: '[SECTION.Work]' },
-            { corner: 'tr', label: '[DIV.ProjectCard]' },
-            { corner: 'bl', label: '[IMG.Thumbnail]' },
-            { corner: 'br', label: '[SPAN.Meta]' },
-          ].map(({ corner, label }) => (
-            <div
-              key={corner}
-              className="absolute"
-              style={{
-                top: corner.startsWith('t') ? 8 : undefined,
-                bottom: corner.startsWith('b') ? 8 : undefined,
-                left: corner.endsWith('l') ? 8 : undefined,
-                right: corner.endsWith('r') ? 8 : undefined,
-                fontFamily: 'JetBrains Mono',
-                fontSize: '8px',
-                color: '#007AFF',
-                opacity: 0.65,
-                pointerEvents: 'none',
-              }}
-            >
-              {label}
-            </div>
-          ))}
-        </>
-      )}
     </article>
   )
 }

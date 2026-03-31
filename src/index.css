@@ -6,8 +6,8 @@
   --color-ink: #0A0908;
   --color-ink-mid: rgba(10,9,8,0.45);
   --color-ink-faint: rgba(10,9,8,0.08);
-  --color-blue: #007AFF;
-  --color-blue-dim: rgba(0,122,255,0.12);
+  --color-accent: rgba(10,9,8,0.4);
+  --color-accent-dim: rgba(10,9,8,0.08);
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
@@ -36,6 +36,11 @@ body {
 ::-webkit-scrollbar-thumb { background: rgba(10,9,8,0.2); }
 
 ::selection {
-  background: rgba(0,122,255,0.15);
+  background: rgba(10,9,8,0.1);
   color: #0A0908;
+}
+
+/* Promote clip-path-animated cards to their own compositor layer */
+[data-project-card] {
+  will-change: clip-path;
 }

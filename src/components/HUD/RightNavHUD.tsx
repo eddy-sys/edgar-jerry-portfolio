@@ -1,3 +1,4 @@
+import { useState, useRef, useCallback } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
 const navItems = [
@@ -6,75 +7,105 @@ const navItems = [
   { label: 'Contact', path: '/contact' },
 ]
 
-export function RightNavHUD() {
-  const location = useLocation()
+const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+function ScrambleLink({ label, path, isActive }: { label: string; path: string; isActive: boolean }) {
+  const [display, setDisplay] = useState(label)
+  const rafRef = useRef<number>(0)
+  const iterRef = useRef(0)
+
+  const scramble = useCallback(() => {
+    cancelAnimationFrame(rafRef.current)
+    iterRef.current = 0
+    const totalFrames = label.length * 3
+
+    const tick = () => {
+      iterRef.current++
+      const progress = iterRef.current / totalFrames
+
+      setDisplay(
+        label
+          .split('')
+          .map((char, i) => {
+            if (char === ' ') return ' '
+            // Reveal each character left-to-right as progress advances
+            if (progress > i / label.length) return char
+            return CHARS[Math.floor(Math.random() * CHARS.length)]
+          })
+          .join('')
+      )
+
+      if (iterRef.current < totalFrames) {
+        rafRef.current = requestAnimationFrame(tick)
+      } else {
+        setDisplay(label)
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(tick)
+  }, [label])
+
+  const reset = useCallback(() => {
+    cancelAnimationFrame(rafRef.current)
+    setDisplay(label)
+  }, [label])
 
   return (
-    <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50">
-      <div
+    <Link
+      to={path}
+      className="flex items-center justify-end pr-0 py-1.5"
+      style={{ textDecoration: 'none' }}
+      onMouseEnter={scramble}
+      onMouseLeave={reset}
+    >
+      <span
         style={{
-          background: 'rgba(245,242,237,0.8)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(10,9,8,0.1)',
-          width: '160px',
+          fontFamily: 'Inter',
+          fontWeight: isActive ? 700 : 400,
+          fontSize: '22px',
+          letterSpacing: '-0.02em',
+          color: '#0A0908',
+          opacity: isActive ? 1 : 0.28,
+          transition: 'opacity 0.2s',
+          fontVariantNumeric: 'tabular-nums',
         }}
       >
-        <div
-          className="px-3 py-2 flex items-center justify-between"
-          style={{ borderBottom: '1px solid rgba(10,9,8,0.07)' }}
-        >
-          <span style={{ fontFamily: 'JetBrains Mono', fontSize: '9px', letterSpacing: '0.2em', color: 'rgba(10,9,8,0.35)' }}>
-            NAVIGATION
-          </span>
-          <div className="flex gap-1">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(10,9,8,0.15)' }} />
-            ))}
-          </div>
-        </div>
+        {display}
+      </span>
+    </Link>
+  )
+}
 
+export function RightNavHUD() {
+  const location = useLocation()
+  const activeIndex = navItems.findIndex((item) => item.path === location.pathname)
+  const pageNum = String(activeIndex + 1).padStart(2, '0')
+  const total = String(navItems.length).padStart(2, '0')
+
+  return (
+    <div className="fixed top-1/2 -translate-y-1/2 z-50" style={{ right: '1.5rem' }}>
+      <div>
         <div className="py-2">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path
-            return (
-              <Link
-                key={item.label}
-                to={item.path}
-                className="flex items-center gap-2 px-3 py-2"
-                style={{ textDecoration: 'none' }}
-              >
-                <div
-                  className="w-1 h-1 rounded-full"
-                  style={{ background: isActive ? '#007AFF' : 'rgba(10,9,8,0.2)', flexShrink: 0 }}
-                />
-                <span
-                  style={{
-                    fontFamily: 'Inter',
-                    fontWeight: 500,
-                    fontSize: '13px',
-                    color: isActive ? '#0A0908' : 'rgba(10,9,8,0.4)',
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  {item.label}
-                </span>
-                {isActive && (
-                  <span style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono', fontSize: '10px', color: '#007AFF' }}>
-                    ●
-                  </span>
-                )}
-              </Link>
-            )
-          })}
+          {navItems.map((item) => (
+            <ScrambleLink
+              key={item.label}
+              label={item.label}
+              path={item.path}
+              isActive={location.pathname === item.path}
+            />
+          ))}
         </div>
 
-        <div
-          className="px-3 py-2 flex items-center gap-2"
-          style={{ borderTop: '1px solid rgba(10,9,8,0.07)' }}
-        >
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#22C55E', boxShadow: '0 0 4px #22C55E' }} />
-          <span style={{ fontFamily: 'JetBrains Mono', fontSize: '10px', color: 'rgba(10,9,8,0.35)' }}>
-            Available
+        <div className="flex justify-end pr-0 pt-1">
+          <span
+            style={{
+              fontFamily: 'JetBrains Mono',
+              fontSize: '9px',
+              color: 'rgba(10,9,8,0.3)',
+              letterSpacing: '0.1em',
+            }}
+          >
+            {pageNum} / {total}
           </span>
         </div>
       </div>
