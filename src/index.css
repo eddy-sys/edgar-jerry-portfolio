@@ -31,6 +31,36 @@ body {
   overflow-x: hidden;
 }
 
+/* ── Responsive page padding ───────────────────── */
+:root {
+  --page-pl: 2rem;
+  --page-pr: 12rem;
+  --page-pt: 8rem;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --page-pl: 1.5rem;
+    --page-pr: 1.5rem;
+    --page-pt: 6rem;
+  }
+
+  /* Cards always span full width on mobile */
+  [data-project-card] {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* Restore real cursor on touch — custom cursor hides itself too */
+  body {
+    cursor: auto;
+  }
+
+  /* Breathing room above mobile bottom nav */
+  #root > div {
+    padding-bottom: 68px;
+  }
+}
+
 ::-webkit-scrollbar { width: 2px; }
 ::-webkit-scrollbar-track { background: #F5F2ED; }
 ::-webkit-scrollbar-thumb { background: rgba(10,9,8,0.2); }

@@ -48,8 +48,8 @@ export function CtaSection() {
       className="w-full"
       style={{
         background: '#F5F2ED',
-        paddingLeft: '2rem',
-        paddingRight: '12rem',
+        paddingLeft: 'var(--page-pl)',
+        paddingRight: 'var(--page-pr)',
         paddingTop: '7rem',
         paddingBottom: '7rem',
         borderTop: '1px solid rgba(10,9,8,0.07)',

@@ -78,7 +78,7 @@ export function ProjectDetail() {
       <div
         className="w-full relative"
         style={{
-          height: '55vh',
+          height: 'clamp(220px, 45vh, 420px)',
           background: `linear-gradient(135deg, ${project.imageColor}30 0%, #EDEAE4 100%)`,
         }}
       >
@@ -108,7 +108,7 @@ export function ProjectDetail() {
       </div>
 
       {/* Content */}
-      <div ref={contentRef} style={{ paddingLeft: '2rem', paddingRight: '12rem', paddingTop: '4rem', paddingBottom: '10rem' }}>
+      <div ref={contentRef} style={{ paddingLeft: 'var(--page-pl)', paddingRight: 'var(--page-pr)', paddingTop: '4rem', paddingBottom: '10rem' }}>
         <div className="max-w-3xl">
 
           {/* Category + year */}

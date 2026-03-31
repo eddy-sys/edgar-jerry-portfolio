@@ -62,9 +62,9 @@ export function About() {
       className="min-h-screen"
       style={{
         background: '#F5F2ED',
-        paddingLeft: '2rem',
-        paddingRight: '12rem',
-        paddingTop: '8rem',
+        paddingLeft: 'var(--page-pl)',
+        paddingRight: 'var(--page-pr)',
+        paddingTop: 'var(--page-pt)',
         paddingBottom: '8rem',
       }}
     >
@@ -100,8 +100,7 @@ export function About() {
 
         <div
           ref={bioRef}
-          className="grid gap-10 mb-20"
-          style={{ gridTemplateColumns: '1fr 1fr' }}
+          className="grid gap-10 mb-20 grid-cols-1 md:grid-cols-2"
         >
           <p
             data-bio-reveal

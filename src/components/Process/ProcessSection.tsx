@@ -114,7 +114,7 @@ export function ProcessSection() {
       <div className="hidden md:flex flex-col h-full justify-center" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
 
         {/* Section label + headline — fixed in place outside the track */}
-        <div style={{ paddingLeft: '2rem', paddingRight: '12rem', marginBottom: '7rem', flexShrink: 0 }}>
+        <div style={{ paddingLeft: 'var(--page-pl)', paddingRight: 'var(--page-pr)', marginBottom: '7rem', flexShrink: 0 }}>
           <span
             style={{
               fontFamily: 'JetBrains Mono',

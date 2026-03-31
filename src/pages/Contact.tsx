@@ -93,9 +93,9 @@ export function Contact() {
       className="min-h-screen"
       style={{
         background: '#F5F2ED',
-        paddingLeft: '2rem',
-        paddingRight: '12rem',
-        paddingTop: '8rem',
+        paddingLeft: 'var(--page-pl)',
+        paddingRight: 'var(--page-pr)',
+        paddingTop: 'var(--page-pt)',
         paddingBottom: '8rem',
       }}
     >

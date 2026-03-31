@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 
 type CursorState = 'default' | 'hover' | 'viewfinder'
 
-export function CustomCursor() {
+// Separate inner component so hooks always run — outer guards touch devices
+function CursorInner() {
   const dotRef = useRef<HTMLDivElement>(null)
   const ringRef = useRef<HTMLDivElement>(null)
   const [state, setCursorState] = useState<CursorState>('default')
@@ -115,4 +116,10 @@ export function CustomCursor() {
       </div>
     </>
   )
+}
+
+export function CustomCursor() {
+  // Touch devices have no pointer — skip the whole cursor + RAF loop
+  if (window.matchMedia('(pointer: coarse)').matches) return null
+  return <CursorInner />
 }

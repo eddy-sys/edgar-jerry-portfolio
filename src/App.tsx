@@ -6,6 +6,7 @@ import { CustomCursor } from './components/Cursor/CustomCursor'
 import { TopLeftHUD } from './components/HUD/TopLeftHUD'
 import { BottomLeftHUD } from './components/HUD/BottomLeftHUD'
 import { RightNavHUD } from './components/HUD/RightNavHUD'
+import { MobileNav } from './components/HUD/MobileNav'
 import { Home } from './pages/Home'
 import { About } from './pages/About'
 import { Contact } from './pages/Contact'
@@ -81,6 +82,7 @@ function AppInner() {
       <TopLeftHUD />
       <BottomLeftHUD />
       <RightNavHUD />
+      <MobileNav />
       <AnimatedRoutes />
     </div>
   )

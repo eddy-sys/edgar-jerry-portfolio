@@ -16,7 +16,7 @@ export function BottomLeftHUD() {
   const fmt = (n: number) => String(n).padStart(2, '0')
 
   return (
-    <div className="fixed bottom-6 left-6 z-50">
+    <div className="fixed bottom-6 left-6 z-50 hidden md:block">
       <div
         className="flex items-center gap-2"
         style={{ fontFamily: 'JetBrains Mono' }}

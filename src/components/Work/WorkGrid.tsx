@@ -69,8 +69,8 @@ export function WorkGrid() {
       className="w-full py-24"
       style={{
         background: '#F5F2ED',
-        paddingLeft: '2rem',
-        paddingRight: '12rem',
+        paddingLeft: 'var(--page-pl)',
+        paddingRight: 'var(--page-pr)',
         paddingTop: '5rem',
       }}
     >

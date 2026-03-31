@@ -83,7 +83,7 @@ export function RightNavHUD() {
   const total = String(navItems.length).padStart(2, '0')
 
   return (
-    <div className="fixed top-1/2 -translate-y-1/2 z-50" style={{ right: '1.5rem' }}>
+    <div className="fixed top-1/2 -translate-y-1/2 z-50 hidden md:block" style={{ right: '1.5rem' }}>
       <div>
         <div className="py-2">
           {navItems.map((item) => (
